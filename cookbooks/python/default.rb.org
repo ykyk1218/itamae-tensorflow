@@ -1,0 +1,53 @@
+case node[:platform]
+when "ubuntu"
+   #execute "install python3" do
+   #  command <<-"EOH"
+   #    sudo add-apt-repository ppa:fkrull/deadsnakes
+   #    sudo apt-get update
+   #    sudo apt-get install python #{node[:python][:version]}
+   #  EOH
+   #end
+
+   package 'python3-pip' do
+     action :install
+   end
+
+   execute "install numpy" do
+     user "vagrant"
+     command <<-"EOH"
+       sudo pip3 install numpy
+     EOH
+   end
+
+else
+  %w(zlib-devel bzip2-devel openssl-devel ncurses-devel sqlite-devel readline-devel tk-devel).each do |pkg|
+    package pkg
+  end
+  
+  git ".pyenv" do
+    user "vagrant"
+    repository "https://github.com/yyuu/pyenv.git"
+    revision "master"
+    action :sync
+  end
+  
+  execute "pyenvのrootパス追加" do
+    user "vagrant"
+    command <<-"EOH"
+      echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc
+      echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc
+      echo 'eval "$(pyenv init -)"' >> ~/.bashrc
+    EOH
+    not_if "grep pyenv ~/.bashrc"
+  end
+  
+  execute "pyenv実行" do
+    user "vagrant"
+    command <<-"EOH"
+      source ~/.bashrc
+      pyenv install #{node[:python][:version]}
+      pyenv global #{node[:python][:version]}
+    EOH
+    not_if "test -e ~/.pyenv/versions/#{node[:python][:version]}"
+  end
+end
