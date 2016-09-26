@@ -1,5 +1,7 @@
 # itamae-tensorflow
 
+this recipe ubuntu only...
+
 use python3
 
 ```
